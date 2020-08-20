@@ -49,7 +49,7 @@ end
 
 shapes = {
   {
-    colors={12,13,14,15},
+    colors={1,2,3,4},
     x=0,
     y=0,
     trails=3,
@@ -59,13 +59,53 @@ shapes = {
     end
   },
   {
-    colors={12,13,14,15},
-    x=64,
-    y=64,
+    colors={1,2,3,4},
+    x=0,
+    y=0,
     trails=3,
     framesPerTrail=2,
     draw=function(x, y, color)
       circfill(x, y, 9, color)
+    end
+  },
+  {
+    colors={5,6,7,8},
+    x=0,
+    y=0,
+    trails=3,
+    framesPerTrail=4,
+    draw=function(x, y, color)
+      circfill(x, y, 8, color)
+    end
+  },
+  {
+    colors={5,6,7,8,9},
+    x=0,
+    y=0,
+    trails=4,
+    framesPerTrail=1,
+    draw=function(x, y, color)
+      circfill(x, y, 4, color)
+    end
+  },
+  {
+    colors={10,11,12,13},
+    x=0,
+    y=0,
+    trails=3,
+    framesPerTrail=2,
+    draw=function(x, y, color)
+      circfill(x, y, 12, color)
+    end
+  },
+  {
+    colors={10,11,12,13},
+    x=0,
+    y=0,
+    trails=3,
+    framesPerTrail=8,
+    draw=function(x, y, color)
+      circfill(x, y, 7, color)
     end
   }
 }
@@ -76,17 +116,29 @@ function _init()
   init_dbg()
   -- Setup the palettes in use
   -- Colors figured out thanks to http://kometbomb.net/pico8/fadegen.html
-  pal(13, 129, 1)
-  pal(14, 131, 1)
-  pal(15, 140, 1)
+  pal(1, 12, 1)
+  pal(2, 129, 1)
+  pal(3, 131, 1)
+  pal(4, 140, 1)
+
+  pal(5, 10, 1)
+  pal(6, 128, 1)
+  pal(7, 132, 1)
+  pal(8, 4, 1)
+  pal(9, 138, 1)
+
+  pal(10, 8, 1)
+  pal(11, 128, 1)
+  pal(12, 132, 1)
+  pal(13, 136, 1)
 
   foreach(shapes, function(shape)
     -- Move it somewhere random
     shape.x=flr(rnd(112))+10
     shape.y=flr(rnd(112))+10
     -- Give it a random velocity
-    shape.vx=flr(rnd(3)) - 1
-    shape.vy=flr(rnd(3)) - 1
+    shape.vx=flr(rnd(5)) - 2
+    shape.vy=flr(rnd(5)) - 2
     if (shape.vx == 0 and shape.vy == 0) then shape.vx = 1 end
 
   end)
