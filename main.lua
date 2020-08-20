@@ -1,34 +1,50 @@
 menuitem(1,"debug",function()debugger.expand(true)end)
 
-function initShape(shape)
-  shape.trailPositions = shape.trailPositions or {}
-  shape.trails = shape.trails or 1
-  shape.framesPerTrail = shape.framesPerTrail or 1
-  assert(#shape.colors == shape.trails + 1, "Provide one color per shape drawn (including all trails)")
-end
+function createTrailSystem(shapes)
+  local longestTrail = 0
+  foreach(shapes, function(shape)
+    shape.trailPositions = shape.trailPositions or {}
+    shape.trails = shape.trails or 1
+    shape.framesPerTrail = shape.framesPerTrail or 1
+    assert(#shape.colors == shape.trails + 1, "Provide one color per shape drawn (including all trails)")
+    longestTrail = max(longestTrail, shape.trails)
+  end)
 
-function updateShapeTrails(shape)
-  if (#shape.trailPositions > (shape.trails * shape.framesPerTrail)) then
-    -- Remove the oldest / now stale trail
-    deli(shape.trailPositions, 1)
-  end
-  -- Add a new trail at the last position
-  add(shape.trailPositions, { x=shape.x, y=shape.y })
-end
+  return {
+    update=function()
+      foreach(shapes, function(shape)
+        if (#shape.trailPositions > (shape.trails * shape.framesPerTrail)) then
+          -- Remove the oldest / now stale trail
+          deli(shape.trailPositions, 1)
+        end
+        -- Add a new trail at the last position
+        add(shape.trailPositions, { x=shape.x, y=shape.y })
+      end)
+    end,
 
-function drawShape(shape)
-  local step = shape.framesPerTrail
-  for frame=1,#shape.trailPositions,step do
-    local color = shape.colors[ceil(frame / step) + 1]
-    pal(shape.colors[1], color)
-    shape.draw(
-      shape.trailPositions[frame].x,
-      shape.trailPositions[frame].y,
-      shape.colors[1]
-    )
-  end
-  pal(shape.colors[1], shape.colors[1])
-  shape.draw(shape.x, shape.y, shape.colors[1])
+    draw=function()
+      -- Draw all the trail layers at the same time to avoid weird overlay
+      -- artefacts
+      for trail=longestTrail,1,-1 do
+        foreach(shapes, function(shape)
+          if (shape.trails < trail) then return end
+          local frame = ((shape.trails - trail) * shape.framesPerTrail) + 1
+          if (not shape.trailPositions[frame]) then return end
+          local color = shape.colors[ceil(frame / shape.framesPerTrail) + 1]
+          pal(shape.colors[1], color)
+          shape.draw(
+            shape.trailPositions[frame].x,
+            shape.trailPositions[frame].y,
+            shape.colors[1]
+          )
+        end)
+      end
+      foreach(shapes, function(shape)
+        pal(shape.colors[1], shape.colors[1])
+        shape.draw(shape.x, shape.y, shape.colors[1])
+      end)
+    end
+  }
 end
 
 shapes = {
@@ -54,6 +70,8 @@ shapes = {
   }
 }
 
+local trails
+
 function _init()
   init_dbg()
   -- Setup the palettes in use
@@ -71,10 +89,10 @@ function _init()
     shape.vy=flr(rnd(3)) - 1
     if (shape.vx == 0 and shape.vy == 0) then shape.vx = 1 end
 
-    -- Initialise the shapes ready for motion trail
-    initShape(shape)
   end)
 
+  -- Initialise the shapes ready for motion trail
+  trails = createTrailSystem(shapes)
 end
 
 function _update60()
@@ -101,17 +119,14 @@ function _update60()
       shape.y = 117
       shape.vy = -abs(shape.vy)
     end
-
-    -- Update the trails
-    updateShapeTrails(shape)
   end)
+
+  trails.update()
 end
 
 function _draw()
   cls(0)
-  foreach(shapes, function(shape)
-    drawShape(shape)
-  end)
+  trails.draw()
   debugger.draw()
   sdbg()
 end
